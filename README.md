@@ -1,1 +1,1 @@
-# ai-practice
+# ai-practice AI练习

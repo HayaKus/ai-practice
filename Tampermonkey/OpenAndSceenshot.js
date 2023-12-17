@@ -16,10 +16,10 @@
     ];
 
     // 点击元素
-    var clickElement = 'i.c-icon.hotsearch-title';
+    var clickElement = '点击元素的名称';
 
     // 截图元素
-    var sceenshotElement = 's_main.main.clearfix.c-wrapper.c-wrapper-l';
+    var sceenshotElement = '截图元素的名称';
 
     function openUrlsAndClick() {
         var confirmed = confirm('确认打开预设网页并点击指定坐标吗？');

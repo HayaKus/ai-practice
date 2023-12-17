@@ -1,8 +1,9 @@
 // ==UserScript==
-// @name         批量打开网页并点击和截图
+// @name         大促批量截图
 // @version      1.0
 // @description  手动批量打开预设的网页
-// @author       haya
+// @author       哈雅
+// @match        https://www.baidu.com
 // @grant        none
 // ==/UserScript==
 
@@ -16,10 +17,10 @@
     ];
 
     // 点击元素
-    var clickElement = '点击元素的名称';
+    var clickElement = 'i.c-icon.hotsearch-title';
 
     // 截图元素
-    var sceenshotElement = '截图元素的名称';
+    var sceenshotElement = 's_main.main.clearfix.c-wrapper.c-wrapper-l';
 
     function openUrlsAndClick() {
         var confirmed = confirm('确认打开预设网页并点击指定坐标吗？');
@@ -57,55 +58,48 @@
         }
     }
 
-    function takeScreenshotOfElement(win) {
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    async function takeScreenshot(win) {
+        var document = win.document;
+        const pageWidth = Math.max(document.body.scrollWidth, document.body.offsetWidth, document.documentElement.clientWidth, document.documentElement.scrollWidth, document.documentElement.offsetWidth);
+        const pageHeight = Math.max(document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = pageWidth;
+        canvas.height = pageHeight;
+
+        const context = canvas.getContext('2d');
+
+        const screenshotItems = [];
+        let yOffset = 0;
+        while (yOffset < pageHeight) {
+            window.scrollTo(0, yOffset);
+            await sleep(10000); // Adjust the delay if needed
+            screenshotItems.push({
+                yOffset: yOffset,
+                data: context.getImageData(0, yOffset, pageWidth, Math.min(pageHeight - yOffset, window.innerHeight))
+            });
+            yOffset += window.innerHeight;
+        }
+
+        screenshotItems.forEach(item => {
+            context.putImageData(item.data, 0, item.yOffset);
+        });
+
+        const dataURL = canvas.toDataURL('image/png');
+
+        // Create a temporary link element to download the screenshot
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = 'full-page-screenshot.png';
+        link.click();
+    }
+
+    async function takeScreenshotOfElement(win) {
         if (win) {
             try {
-                // 获取要截图的模块元素，这里以一个具体的模块选择器为例
-                const moduleElement = win.document.querySelector(sceenshotElement); // 替换为目标模块的选择器
-
-                if (!moduleElement) {
-                    alert('text: 指定模块未找到!, title: 截图失败');
-                    return;
-                }
-
-                // 获取模块的位置和大小信息
-                const { x, y, width, height } = moduleElement.getBoundingClientRect();
-
-                // 创建一个 Canvas 元素，用于绘制截图
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-
-                // 设置 Canvas 的大小与模块相同
-                canvas.width = width;
-                canvas.height = height;
-
-                // 在 Canvas 上绘制指定区域的截图
-                ctx.drawImage(
-                    document.documentElement,
-                    x + window.scrollX,
-                    y + window.scrollY,
-                    width,
-                    height,
-                    0,
-                    0,
-                    width,
-                    height
-                );
-
-                // 将 Canvas 的内容转换为 Data URL
-                const imageDataUrl = canvas.toDataURL('image/png'); // 可以选择图片格式
-
-                // 创建一个虚拟的<a>元素
-                const link = document.createElement('a');
-                link.href = imageDataUrl;
-                link.download = 'module_screenshot.png'; // 下载的文件名
-
-                // 将链接添加到页面中，模拟点击下载
-                document.body.appendChild(link);
-                link.click();
-
-                // 清理创建的元素
-                document.body.removeChild(link);
+                await takeScreenshot(win);
             } catch (error) {
                 alert('截图失败:' + error);
             }
